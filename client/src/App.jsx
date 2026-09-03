@@ -15,7 +15,7 @@ import {
   FileText,
   Activity,
 } from "lucide-react";
-const API = import.meta.env.VITE_API_URL || "";
+const API = import.meta.env.VITE_API_URL || "https://case-22pl.onrender.com";
 const users = [
   "Hor Nalen",
   "Keo Sothea",
