@@ -49,6 +49,8 @@ const getError = (e) => e?.error || "មិនអាចភ្ជាប់ទៅ 
 async function api(path, options = {}) {
   const response = await fetch(`${API}${path}`, {
     credentials: "include",
+    cache: "no-store",
+    headers: { "Cache-Control": "no-cache", ...(options.headers || {}) },
     ...options,
   });
   const data = await response.json().catch(() => ({}));
@@ -461,7 +463,7 @@ function Lightbox({ image, images, onClose }) {
       </button>
       <img
         style={{ transform: `scale(${zoom})` }}
-        src={`${API}${item.url}`}
+        src={`${API}${item.url}?v=${item.id}`}
         alt={item.original_name}
       />
       <button
@@ -647,7 +649,7 @@ function Dashboard({ user, onLogout }) {
                           setView({ image: img, images: c.images })
                         }
                       >
-                        <img src={`${API}${img.url}`} alt={c.name} />
+                        <img src={`${API}${img.url}?v=${img.id}`} alt={c.name} />
                       </button>
                     ))}
                     {!c.images.length && (
