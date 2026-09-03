@@ -15,6 +15,7 @@ const uploads = path.join(root, 'uploads'); fs.mkdirSync(uploads, { recursive: t
 const app = express(); const sessions = new Map(); const port = Number(process.env.PORT || 4000);
 const configuredClient = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(cors({ origin: (origin, callback) => { if (!origin || origin === configuredClient || /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)/.test(origin)) return callback(null, true); callback(new Error('Origin not allowed')); }, credentials: true })); app.use(express.json()); app.use(cookieParser());
+app.get('/', (req, res) => res.json({ ok: true, service: 'Memong Police API', status: 'online' }));
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }); app.use('/api/login', limiter);
 const labels = { criminal: 'ដីការព្រហ្មទណ្ឌ', drugs: 'ដីការគ្រឿងញៀន', arrest: 'ដីការចាប់ខ្លួន', release: 'ដីការដោះលែង' };
 function audit(userId, action, caseId = null, details = '') { db.prepare('INSERT INTO audit_logs (user_id,action,case_id,details,created_at) VALUES (?,?,?,?,?)').run(userId, action, caseId, details, now()); }
