@@ -17,9 +17,7 @@ import {
   CheckCircle2,
   RotateCw,
 } from "lucide-react";
-const API = window.location.hostname.endsWith(".pages.dev")
-  ? ""
-  : import.meta.env.VITE_API_URL || "";
+const API = import.meta.env.DEV ? import.meta.env.VITE_API_URL || "" : "";
 const users = [
   "Hor Nalen",
   "Keo Sothea",
