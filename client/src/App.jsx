@@ -148,7 +148,6 @@ function ChangePassword({ user, onDone, firstLogin = false, onClose }) {
   });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true);
@@ -270,6 +269,7 @@ function RecordForm({ edit, onClose, onSaved }) {
   const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
   const choose = (e) => {
     const chosen = [...e.target.files];
     if (
