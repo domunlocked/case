@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = path.dirname(fileURLToPath(import.meta.url));
+export const now = () => new Date().toISOString();
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
 fs.mkdirSync(dataDir, { recursive: true });
 const db = new Database(path.join(dataDir, 'memong.db'));
@@ -15,5 +16,6 @@ CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, user_id INTEGE
 CREATE INDEX IF NOT EXISTS idx_cases_name ON cases(name); CREATE INDEX IF NOT EXISTS idx_images_case ON images(case_id); CREATE INDEX IF NOT EXISTS idx_sessions_expiry ON sessions(expires_at);`);
 try { db.exec('ALTER TABLE cases ADD COLUMN case_date TEXT'); } catch (error) { if (!String(error.message).includes('duplicate column')) throw error; }
 db.exec("UPDATE cases SET case_date = created_at WHERE case_date IS NULL");
-export const now = () => new Date().toISOString();
+const renamedUsers = [['Hor Nalen', 'ហោ ណាឡែន'], ['Keo Sothea', 'កែវ សុទ្ធា'], ['ET Samoul', 'អ៊ិត សំអុល'], ['Leng Samnang', 'ឡេង សំណាង'], ['Chan Dalen', 'ចាន់ ដាឡែន'], ['DomZzz', 'រ៉េត ចាន់ឧត្ដម']];
+for (const [oldName, newName] of renamedUsers) db.prepare('UPDATE users SET name=?,updated_at=? WHERE name=?').run(newName, now(), oldName);
 export default db;

@@ -49,7 +49,7 @@ Set `VITE_API_URL` to the HTTPS ngrok backend URL and restart the frontend. For 
 npm.cmd run build
 ```
 
-Deploy `client/dist` to static hosting. The Render API must use a persistent disk mounted at `/var/data` (the included `render.yaml` configures this) so SQLite and uploaded images are shared across phones and survive restarts. If configuring Render manually, set `DATA_DIR=/var/data` and `UPLOADS_DIR=/var/data/uploads`. Keep Express, SQLite, and the data disk on a protected server. Never commit `.env`, `server/data`, or `server/uploads`. To publish source:
+Deploy `client/dist` to static hosting. The Render API must use a persistent disk mounted at `/var/data` (the included `render.yaml` configures this) so SQLite, passwords, sessions, case records, and uploaded images survive restarts and redeploys. If configuring Render manually, set `DATA_DIR=/var/data` and `UPLOADS_DIR=/var/data/uploads`; without a persistent disk, hosted data is temporary. Sessions remain valid for 10 years unless the user logs out. រ៉េត ចាន់ឧត្ដម can create users from the dashboard and view the full activity log, while every signed-in user can export case data to PDF for the last 1 month, last 3 months, or a selected month. Keep Express, SQLite, and the data disk on a protected server. Never commit `.env`, `server/data`, or `server/uploads`. To publish source:
 
 ```powershell
 git init

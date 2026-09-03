@@ -16,15 +16,17 @@ import {
   Activity,
   CheckCircle2,
   RotateCw,
+  Download,
+  UserPlus,
 } from "lucide-react";
 const API = import.meta.env.DEV ? import.meta.env.VITE_API_URL || "" : "";
 const users = [
-  "Hor Nalen",
-  "Keo Sothea",
-  "ET Samoul",
-  "Leng Samnang",
-  "Chan Dalen",
-  "DomZzz",
+  "ហោ ណាឡែន",
+  "កែវ សុទ្ធា",
+  "អ៊ិត សំអុល",
+  "ឡេង សំណាង",
+  "ចាន់ ដាឡែន",
+  "រ៉េត ចាន់ឧត្ដម",
 ];
 const categories = [
   { key: "criminal", label: "ដីការព្រហ្មទណ្ឌ", color: "blue" },
@@ -75,10 +77,19 @@ function Brand({ compact = false }) {
   );
 }
 function Login({ onLogin }) {
+  const [availableUsers, setAvailableUsers] = useState(users);
   const [name, setName] = useState(users[0]);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  useEffect(() => {
+    api("/api/users").then((data) => {
+      if (data.users?.length) {
+        setAvailableUsers(data.users);
+        setName(data.users[0]);
+      }
+    }).catch(() => {});
+  }, []);
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true);
@@ -113,7 +124,7 @@ function Login({ onLogin }) {
           <label>
             អ្នកប្រើប្រាស់
             <select value={name} onChange={(e) => setName(e.target.value)}>
-              {users.map((u) => (
+              {availableUsers.map((u) => (
                 <option key={u}>{u}</option>
               ))}
             </select>
@@ -139,6 +150,63 @@ function Login({ onLogin }) {
       </section>
     </main>
   );
+}
+function UserForm({ onClose, onCreated }) {
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async (event) => {
+    event.preventDefault(); setBusy(true); setError("");
+    try { await api("/api/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, password }) }); onCreated(); }
+    catch (e) { setError(getError(e)); } finally { setBusy(false); }
+  };
+  return <div className="modal-backdrop"><section className="modal form-modal">
+    <button className="icon-btn close" onClick={onClose}><X /></button>
+    <div className="modal-title"><span className="section-icon"><UserPlus size={19} /></span><div><span className="eyebrow">USER ACCESS</span><h2>បង្កើតអ្នកប្រើប្រាស់ថ្មី</h2></div></div>
+    <form onSubmit={submit} className="form-stack">
+      <label>ឈ្មោះអ្នកប្រើប្រាស់<input value={name} onChange={(e) => setName(e.target.value)} required /></label>
+      <label>ពាក្យសម្ងាត់ដំបូង<input type="password" minLength="6" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+      {error && <div className="alert error">{error}</div>}
+      <div className="modal-actions"><button type="button" className="secondary" onClick={onClose}>បោះបង់</button><button className="primary" disabled={busy}>{busy ? "កំពុងរក្សាទុក..." : "បង្កើត"}<ChevronRight size={17} /></button></div>
+    </form>
+  </section></div>;
+}
+function ExportForm({ onClose }) {
+  const [range, setRange] = useState("1month");
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async (event) => {
+    event.preventDefault(); setBusy(true); setError("");
+    try {
+      const response = await fetch(`${API}/api/export?range=${range}${range === "month" ? `&month=${month}` : ""}`, { credentials: "include", cache: "no-store" });
+      if (!response.ok) throw await response.json().catch(() => ({ error: "មិនអាចទាញយក PDF បាន" }));
+      const blob = await response.blob(); const url = URL.createObjectURL(blob); const link = document.createElement("a");
+      link.href = url; link.download = "memong-case-export.pdf"; link.click(); URL.revokeObjectURL(url); onClose();
+    } catch (e) { setError(getError(e)); } finally { setBusy(false); }
+  };
+  return <div className="modal-backdrop"><section className="modal form-modal">
+    <button className="icon-btn close" onClick={onClose}><X /></button>
+    <div className="modal-title"><span className="section-icon"><Download size={19} /></span><div><span className="eyebrow">PDF EXPORT</span><h2>ទាញយករបាយការណ៍</h2></div></div>
+    <form onSubmit={submit} className="form-stack">
+      <label>រយៈពេល<select value={range} onChange={(e) => setRange(e.target.value)}><option value="1month">១ ខែចុងក្រោយ</option><option value="3months">៣ ខែចុងក្រោយ</option><option value="month">ជ្រើសរើសខែជាក់លាក់</option></select></label>
+      {range === "month" && <label>ខែដែលត្រូវការ<input type="month" value={month} onChange={(e) => setMonth(e.target.value)} required /></label>}
+      {error && <div className="alert error">{error}</div>}
+      <div className="modal-actions"><button type="button" className="secondary" onClick={onClose}>បោះបង់</button><button className="primary" disabled={busy}><Download size={17} />{busy ? "កំពុងបង្កើត..." : "ទាញយក PDF"}</button></div>
+    </form>
+  </section></div>;
+}
+function AuditLog({ onClose }) {
+  const [logs, setLogs] = useState([]);
+  const [error, setError] = useState("");
+  useEffect(() => { api("/api/audit-logs").then((data) => setLogs(data)).catch((e) => setError(getError(e))); }, []);
+  const actionLabels = { LOGIN: "ចូលប្រព័ន្ធ", LOGOUT: "ចាកចេញ", CREATE: "បញ្ចូលដីការ", UPDATE: "កែប្រែ/បញ្ចូលឯកសារ", DELETE: "លុបដីការ", USER_CREATE: "បង្កើតអ្នកប្រើប្រាស់", VIEW_IMAGE: "មើលរូបភាព" };
+  return <div className="modal-backdrop"><section className="modal form-modal">
+    <button className="icon-btn close" onClick={onClose}><X /></button>
+    <div className="modal-title"><span className="section-icon"><Activity size={19} /></span><div><span className="eyebrow">AUDIT TRAIL</span><h2>កំណត់ត្រាសកម្មភាព</h2></div></div>
+    {error ? <div className="alert error">{error}</div> : logs.length ? <div className="audit-list">{logs.map((log) => <div className="audit-row" key={log.id}><strong>{log.user_name}</strong><span>{actionLabels[log.action] || log.action}{log.details ? ` • ${log.details}` : ""}</span><small>{displayDateTime(log.created_at)}</small></div>)}</div> : <div className="empty">កំពុងផ្ទុក...</div>}
+  </section></div>;
 }
 function ChangePassword({ user, onDone, firstLogin = false, onClose }) {
   const [form, setForm] = useState({
@@ -487,7 +555,9 @@ function Dashboard({ user, onLogout }) {
   const [selected, setSelected] = useState("all");
   const [query, setQuery] = useState("");
   const [modal, setModal] = useState(null);
-    const [passwordModal, setPasswordModal] = useState(false);
+  const [passwordModal, setPasswordModal] = useState(false);
+  const [exportModal, setExportModal] = useState(false);
+  const [auditModal, setAuditModal] = useState(false);
   const [view, setView] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -551,6 +621,8 @@ function Dashboard({ user, onLogout }) {
           <button className="account-action" onClick={() => setPasswordModal(true)}>
             ប្តូរពាក្យសម្ងាត់
           </button>
+          <button className="account-action" onClick={() => setExportModal(true)}><Download size={16} /> ទាញយក PDF</button>
+          {user.name === "រ៉េត ចាន់ឧត្ដម" && <><button className="account-action" onClick={() => setModal("user")}><UserPlus size={16} /> អ្នកប្រើប្រាស់ថ្មី</button><button className="account-action" onClick={() => setAuditModal(true)}><Activity size={16} /> កំណត់ត្រា</button></>}
         </div>
       </header>
       <main className="dashboard">
@@ -682,15 +754,10 @@ function Dashboard({ user, onLogout }) {
         </section>
       </main>
       {modal && (
-        <RecordForm
-          edit={modal === "new" ? null : modal}
-          onClose={() => setModal(null)}
-          onSaved={() => {
-            setModal(null);
-            load();
-          }}
-        />
+        modal === "user" ? <UserForm onClose={() => setModal(null)} onCreated={() => setModal(null)} /> : <RecordForm edit={modal === "new" ? null : modal} onClose={() => setModal(null)} onSaved={() => { setModal(null); load(); }} />
       )}
+      {exportModal && <ExportForm onClose={() => setExportModal(false)} />}
+      {auditModal && <AuditLog onClose={() => setAuditModal(false)} />}
       {passwordModal && (
         <ChangePassword
           user={user}
