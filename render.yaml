@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: memong-police-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+      - key: UPLOADS_DIR
+        value: /var/data/uploads
+    disk:
+      name: memong-police-data
+      mountPath: /var/data
+      sizeGB: 1

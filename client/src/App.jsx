@@ -14,6 +14,8 @@ import {
   ImagePlus,
   FileText,
   Activity,
+  CheckCircle2,
+  RotateCw,
 } from "lucide-react";
 const API = window.location.hostname.endsWith(".pages.dev")
   ? ""
@@ -146,6 +148,7 @@ function ChangePassword({ user, onDone, firstLogin = false, onClose }) {
   });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true);
@@ -303,13 +306,25 @@ function RecordForm({ edit, onClose, onSaved }) {
         files.forEach((f) => fd.append("images", f));
         await api(`/api/cases/${id}/images`, { method: "POST", body: fd });
       }
-      onSaved();
+      setSaved(true);
+      setTimeout(onSaved, 1200);
     } catch (e) {
       setError(getError(e));
     } finally {
       setBusy(false);
     }
   };
+  if (saved) {
+    return (
+      <div className="modal-backdrop">
+        <section className="modal success-modal" role="status">
+          <CheckCircle2 className="success-check" size={72} />
+          <h2>រក្សាទុកបានជោគជ័យ</h2>
+          <p>{edit ? "ដីការត្រូវបានកែប្រែ" : "ដីការថ្មីត្រូវបានបញ្ចូល"}</p>
+        </section>
+      </div>
+    );
+  }
   return (
     <div className="modal-backdrop">
       <section className="modal form-modal">
@@ -475,15 +490,18 @@ function Dashboard({ user, onLogout }) {
     const [passwordModal, setPasswordModal] = useState(false);
   const [view, setView] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const load = async () => {
     try {
-      setLoading(true);
+      setLoading((current) => current && cases.length === 0);
+      setRefreshing(true);
       setCases(await api("/api/cases"));
     } catch (e) {
       setError(getError(e));
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
   useEffect(() => {
@@ -582,6 +600,16 @@ function Dashboard({ user, onLogout }) {
                 {selected === "all" ? "ដីការទាំងអស់" : "បណ្ណសារដែលបានជ្រើសរើស"}
               </h2>
             </div>
+            <button
+              className="refresh-btn"
+              onClick={load}
+              disabled={refreshing}
+              title="ផ្ទុកទិន្នន័យថ្មី"
+              aria-label="ផ្ទុកទិន្នន័យថ្មី"
+            >
+              <RotateCw size={17} className={refreshing ? "spinning" : ""} />
+              <span>ធ្វើឱ្យថ្មី</span>
+            </button>
             <div className="search">
               <Search size={19} />
               <input

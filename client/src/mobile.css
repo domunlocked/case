@@ -1,0 +1,75 @@
+.refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.refresh-btn:hover {
+  border-color: #9fc7e8;
+  color: var(--blue);
+}
+
+.spinning {
+  animation: spin 0.7s linear infinite;
+}
+
+.success-modal {
+  text-align: center;
+  padding: 48px 27px;
+}
+
+.success-check {
+  color: #16a34a;
+  animation: success-pop 0.45s ease both;
+}
+
+.success-modal h2 {
+  color: var(--navy);
+  font-size: 21px;
+  margin: 19px 0 7px;
+}
+
+.success-modal p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes success-pop {
+  0% { opacity: 0; transform: scale(0.55); }
+  70% { transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 760px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .modal-backdrop {
+    padding: 12px;
+    align-items: start;
+  }
+
+  .modal {
+    max-height: calc(100dvh - 24px);
+    margin-top: 0;
+  }
+
+  .section-heading > .refresh-btn {
+    margin-bottom: 12px;
+  }
+}

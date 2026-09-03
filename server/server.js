@@ -11,7 +11,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import db, { now } from './database.js';
 const root = path.dirname(fileURLToPath(import.meta.url));
-const uploads = path.join(root, 'uploads'); fs.mkdirSync(uploads, { recursive: true });
+const uploads = process.env.UPLOADS_DIR || path.join(process.env.DATA_DIR || root, 'uploads'); fs.mkdirSync(uploads, { recursive: true });
 const app = express(); const port = Number(process.env.PORT || 4000); const sessionLifetime = 30 * 24 * 60 * 60 * 1000;
 const configuredClient = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(cors({ origin: (origin, callback) => { if (!origin || origin === configuredClient || /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)/.test(origin)) return callback(null, true); callback(new Error('Origin not allowed')); }, credentials: true })); app.use(express.json()); app.use(cookieParser());

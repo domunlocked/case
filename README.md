@@ -49,7 +49,7 @@ Set `VITE_API_URL` to the HTTPS ngrok backend URL and restart the frontend. For 
 npm.cmd run build
 ```
 
-Deploy `client/dist` to static hosting. Keep Express, SQLite, and `server/uploads` on a protected server. Never commit `.env`, `server/data`, or `server/uploads`. To publish source:
+Deploy `client/dist` to static hosting. The Render API must use a persistent disk mounted at `/var/data` (the included `render.yaml` configures this) so SQLite and uploaded images are shared across phones and survive restarts. If configuring Render manually, set `DATA_DIR=/var/data` and `UPLOADS_DIR=/var/data/uploads`. Keep Express, SQLite, and the data disk on a protected server. Never commit `.env`, `server/data`, or `server/uploads`. To publish source:
 
 ```powershell
 git init
