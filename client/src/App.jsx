@@ -18,6 +18,7 @@ import {
   RotateCw,
   Download,
   UserPlus,
+  KeyRound,
 } from "lucide-react";
 const API = import.meta.env.DEV ? import.meta.env.VITE_API_URL || "" : "";
 const users = [
@@ -619,6 +620,7 @@ function Dashboard({ user, onLogout }) {
             <LogOut size={17} /> <span>ចាកចេញ</span>
           </button>
           <button className="account-action" onClick={() => setPasswordModal(true)}>
+            <KeyRound size={16} />
             ប្តូរពាក្យសម្ងាត់
           </button>
           <button className="account-action" onClick={() => setExportModal(true)}><Download size={16} /> ទាញយក PDF</button>
