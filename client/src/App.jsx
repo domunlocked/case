@@ -136,9 +136,9 @@ function Login({ onLogin }) {
     </main>
   );
 }
-function ChangePassword({ user, onDone }) {
+function ChangePassword({ user, onDone, firstLogin = false, onClose }) {
   const [form, setForm] = useState({
-    oldPassword: "123",
+    oldPassword: firstLogin ? "123" : "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -160,9 +160,9 @@ function ChangePassword({ user, onDone }) {
       setBusy(false);
     }
   };
-  return (
-    <main className="login-page">
-      <section className="login-panel password-panel">
+    const content = (
+      <section className={firstLogin ? "login-panel password-panel" : "modal password-modal"}>
+      {!firstLogin && <button className="icon-btn close" onClick={onClose}><X /></button>}
         <Brand />
         <div className="login-copy">
           <span className="eyebrow">WELCOME, {user.name.toUpperCase()}</span>
@@ -213,8 +213,8 @@ function ChangePassword({ user, onDone }) {
           </button>
         </form>
       </section>
-    </main>
   );
+  return firstLogin ? <main className="login-page">{content}</main> : <div className="modal-backdrop">{content}</div>;
 }
 function FolderCards({ selected, setSelected, counts }) {
   return (
@@ -470,6 +470,7 @@ function Dashboard({ user, onLogout }) {
   const [selected, setSelected] = useState("all");
   const [query, setQuery] = useState("");
   const [modal, setModal] = useState(null);
+    const [passwordModal, setPasswordModal] = useState(false);
   const [view, setView] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -526,6 +527,9 @@ function Dashboard({ user, onLogout }) {
           </span>
           <button className="logout" onClick={logout}>
             <LogOut size={17} /> <span>ចាកចេញ</span>
+          </button>
+          <button className="account-action" onClick={() => setPasswordModal(true)}>
+            ប្តូរពាក្យសម្ងាត់
           </button>
         </div>
       </header>
@@ -657,6 +661,13 @@ function Dashboard({ user, onLogout }) {
           }}
         />
       )}
+      {passwordModal && (
+        <ChangePassword
+          user={user}
+          onClose={() => setPasswordModal(false)}
+          onDone={() => setPasswordModal(false)}
+        />
+      )}
       {view && <Lightbox {...view} onClose={() => setView(null)} />}
     </div>
   );
@@ -679,6 +690,6 @@ export default function App() {
     );
   if (!user) return <Login onLogin={setUser} />;
   if (user.must_change_password)
-    return <ChangePassword user={user} onDone={setUser} />;
+    return <ChangePassword user={user} firstLogin onDone={setUser} />;
   return <Dashboard user={user} onLogout={() => setUser(null)} />;
 }
