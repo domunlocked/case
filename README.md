@@ -1,6 +1,6 @@
 # ការគ្រប់គ្រងដីការប៉ុស្តិ៍មេមង
 
-A Khmer-first police case archive built with React/Vite, Express, SQLite, bcrypt, HTTP-only cookie sessions, and Multer image uploads.
+A Khmer-first police case archive built with React/Vite, Express, Supabase Postgres, Supabase Storage, bcrypt, HTTP-only cookie sessions, and Multer image uploads.
 
 ## Setup
 
@@ -11,6 +11,10 @@ npm.cmd run install:all
 Copy-Item .env.example .env
 npm.cmd run seed --prefix server
 ```
+
+## Supabase setup
+
+Create a Supabase project, open **SQL Editor**, and run `server/schema.sql`. Create or confirm the private Storage bucket named `case-images`. In Render, set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET=case-images`, and `CLIENT_URL`. Run the seed command after those variables are configured; it creates the six initial users without changing existing passwords.
 
 Put the supplied `police.png` at `client/public/police.png`. The UI has a shield fallback if the asset is absent.
 
@@ -48,6 +52,8 @@ Set `VITE_API_URL` to the HTTPS ngrok backend URL and restart the frontend. For 
 ```powershell
 npm.cmd run build
 ```
+
+Render must use a paid plan with the persistent disk from `render.yaml`; manually configured services need `DATA_DIR=/var/data` and `UPLOADS_DIR=/var/data/uploads`. The server refuses production startup without `DATA_DIR` to prevent silent data loss.
 
 Deploy `client/dist` to static hosting. The Render API must use a persistent disk mounted at `/var/data` (the included `render.yaml` configures this) so SQLite, passwords, sessions, case records, and uploaded images survive restarts and redeploys. If configuring Render manually, set `DATA_DIR=/var/data` and `UPLOADS_DIR=/var/data/uploads`; without a persistent disk, hosted data is temporary. Sessions remain valid for 10 years unless the user logs out. រ៉េត ចាន់ឧត្ដម can create users from the dashboard and view the full activity log, while every signed-in user can export case data to PDF for the last 1 month, last 3 months, or a selected month. Keep Express, SQLite, and the data disk on a protected server. Never commit `.env`, `server/data`, or `server/uploads`. To publish source:
 
