@@ -71,7 +71,7 @@ function Brand({ compact = false }) {
         <Shield size={compact ? 27 : 42} />
       </div>
       <div>
-        <strong>ការគ្រប់គ្រងដីការ</strong>
+        <strong>ប្រព័ន្ធគ្រប់គ្រងដីការ</strong>
         <span>ប៉ុស្តិ៍មេមង</span>
       </div>
     </div>
