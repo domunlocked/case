@@ -48,6 +48,103 @@ const displayDateTime = (value) =>
         timeStyle: "short",
       })
     : "";
+const loadImage = (file) =>
+  new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("IMAGE_LOAD_FAILED"));
+    };
+    img.src = url;
+  });
+const autoScanImage = async (file) => {
+  if (!file || !file.type.startsWith("image/")) return file;
+  const image = await loadImage(file);
+  const maxSide = 2200;
+  const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+  ctx.filter = "contrast(1.7) brightness(1.08) grayscale(1)";
+  ctx.drawImage(image, 0, 0, width, height);
+
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const { data } = imageData;
+  let minX = width;
+  let minY = height;
+  let maxX = 0;
+  let maxY = 0;
+  let foundContent = false;
+
+  for (let y = 0; y < height; y += 2) {
+    for (let x = 0; x < width; x += 2) {
+      const idx = (y * width + x) * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+      if (gray < 220) {
+        foundContent = true;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
+  }
+
+  const pad = 16;
+  const cropX = Math.max(0, minX - pad);
+  const cropY = Math.max(0, minY - pad);
+  const cropWidth = Math.max(1, Math.min(width - cropX, maxX - minX + pad * 2));
+  const cropHeight = Math.max(1, Math.min(height - cropY, maxY - minY + pad * 2));
+
+  const finalCanvas = document.createElement("canvas");
+  finalCanvas.width = foundContent ? cropWidth : width;
+  finalCanvas.height = foundContent ? cropHeight : height;
+  const finalCtx = finalCanvas.getContext("2d", { willReadFrequently: true });
+  finalCtx.fillStyle = "#ffffff";
+  finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+  if (foundContent) {
+    const crop = ctx.getImageData(cropX, cropY, cropWidth, cropHeight);
+    finalCtx.putImageData(crop, 0, 0);
+  } else {
+    finalCtx.drawImage(canvas, 0, 0, finalCanvas.width, finalCanvas.height);
+  }
+
+  const thresholdCanvas = document.createElement("canvas");
+  thresholdCanvas.width = finalCanvas.width;
+  thresholdCanvas.height = finalCanvas.height;
+  const thresholdCtx = thresholdCanvas.getContext("2d", { willReadFrequently: true });
+  thresholdCtx.fillStyle = "#ffffff";
+  thresholdCtx.fillRect(0, 0, thresholdCanvas.width, thresholdCanvas.height);
+  const scanData = finalCtx.getImageData(0, 0, finalCanvas.width, finalCanvas.height);
+  const scanPixels = scanData.data;
+
+  for (let i = 0; i < scanPixels.length; i += 4) {
+    const avg = (scanPixels[i] + scanPixels[i + 1] + scanPixels[i + 2]) / 3;
+    const value = avg < 200 ? 0 : 255;
+    scanPixels[i] = scanPixels[i + 1] = scanPixels[i + 2] = value;
+  }
+  thresholdCtx.putImageData(scanData, 0, 0);
+
+  const blob = await new Promise((resolve) => thresholdCanvas.toBlob(resolve, "image/jpeg", 0.9));
+  return new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+    type: "image/jpeg",
+  });
+};
 const getError = (e) => e?.error || "មិនអាចភ្ជាប់ទៅ Server បាន";
 async function api(path, options = {}) {
   const response = await fetch(`${API}${path}`, {
@@ -339,7 +436,7 @@ function RecordForm({ edit, onClose, onSaved }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
-  const choose = (e) => {
+  const choose = async (e) => {
     const chosen = [...e.target.files];
     if (
       chosen.some(
@@ -357,7 +454,22 @@ function RecordForm({ edit, onClose, onSaved }) {
       setError("អាចបញ្ចូលបានត្រឹម ២០ រូបភាព");
       return;
     }
-    setFiles([...files, ...chosen]);
+
+    try {
+      const scannedFiles = await Promise.all(
+        chosen.map(async (file) => {
+          try {
+            return await autoScanImage(file);
+          } catch {
+            return file;
+          }
+        }),
+      );
+      setFiles((current) => [...current, ...scannedFiles]);
+      e.target.value = "";
+    } catch {
+      setFiles((current) => [...current, ...chosen]);
+    }
   };
   const submit = async (e) => {
     e.preventDefault();
@@ -462,15 +574,18 @@ function RecordForm({ edit, onClose, onSaved }) {
             <span className="hint">
               JPG, PNG, WEBP • អតិបរមា ២០ រូប • ១០ MB/រូប
             </span>
-            <div className="upload-box">
-              <ImagePlus size={25} />
-              <b>ចុចដើម្បីជ្រើសរើសរូបភាព</b>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                onChange={choose}
-              />
+            <div className="scan-upload-row">
+              <div className="upload-box">
+                <ImagePlus size={25} />
+                <b>ចុចដើម្បីជ្រើសរើសរូបភាព</b>
+                <small>ប្រព័ន្ធจะ Auto-scan ឯកសារដោយស្វ័យប្រវត្តិ</small>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={choose}
+                />
+              </div>
             </div>
           </label>
           {files.length > 0 && (
