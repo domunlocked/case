@@ -50,12 +50,25 @@ const displayDateTime = (value) =>
     : "";
 const getError = (e) => e?.error || "មិនអាចភ្ជាប់ទៅ Server បាន";
 async function api(path, options = {}) {
-  const response = await fetch(`${API}${path}`, {
-    credentials: "include",
-    cache: "no-store",
-    headers: { "Cache-Control": "no-cache", ...(options.headers || {}) },
-    ...options,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  let response;
+  try {
+    response = await fetch(`${API}${path}`, {
+      credentials: "include",
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache", ...(options.headers || {}) },
+      ...options,
+      signal: options.signal || controller.signal,
+    });
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw { error: "Server មិនបានឆ្លើយតប សូមពិនិត្យការតភ្ជាប់" };
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw data;
   return data;
